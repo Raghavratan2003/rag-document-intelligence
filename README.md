@@ -231,7 +231,7 @@ What were the company's main sources of revenue?
 ### 1. Clone the Repository
 
 ```bash
-git clone <(https://github.com/Raghavratan2003/rag-document-intelligence)>
+git clone [https://github.com/Raghavratan2003/rag-document-intelligence]
 cd production-rag-document-intelligence
 ```
 
