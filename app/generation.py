@@ -1,11 +1,16 @@
+import os
+import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
 
-
 load_dotenv()
 
-client = OpenAI()
+api_key = os.getenv("OPENAI_API_KEY")
 
+if not api_key:
+    api_key = st.secrets.get("OPENAI_API_KEY")
+
+client = OpenAI(api_key=api_key)
 
 def generate_answer(
     question: str,

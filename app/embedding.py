@@ -1,10 +1,16 @@
+import os
+import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
 
-
 load_dotenv()
 
-client = OpenAI()
+api_key = os.getenv("OPENAI_API_KEY")
+
+if not api_key:
+    api_key = st.secrets.get("OPENAI_API_KEY")
+
+client = OpenAI(api_key=api_key)
 
 
 def create_embeddings(
@@ -15,6 +21,7 @@ def create_embeddings(
     all_embeddings = []
 
     for start in range(0, len(texts), batch_size):
+
         batch = texts[start:start + batch_size]
 
         response = client.embeddings.create(
@@ -22,7 +29,10 @@ def create_embeddings(
             input=batch,
         )
 
-        embeddings = [item.embedding for item in response.data]
+        embeddings = [
+            item.embedding
+            for item in response.data
+        ]
 
         all_embeddings.extend(embeddings)
 
