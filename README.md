@@ -273,6 +273,12 @@ The application will open in your browser.
 
 ---
 
+##App link 
+
+link - [App](https://rag-document-intelligence-mxfhuwdagkwn2tdmtr9bz7.streamlit.app/)
+
+---
+
 ## Future Improvements
 
 - OCR support for scanned documents
