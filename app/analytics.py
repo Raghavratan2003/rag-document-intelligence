@@ -3,10 +3,26 @@ def calculate_document_stats(
     chunks: list[dict],
 ) -> dict:
 
-    total_words = sum(
-        len(page["text"].split())
-        for page in pages
-    )
+    if pages:
+        total_words = sum(
+            len(page["text"].split())
+            for page in pages
+        )
+
+        pages_with_text = len(pages)
+
+    else:
+        total_words = sum(
+            len(chunk["text"].split())
+            for chunk in chunks
+        )
+
+        pages_with_text = len(
+            set(
+                chunk["page_number"]
+                for chunk in chunks
+            )
+        )
 
     total_chunk_words = sum(
         len(chunk["text"].split())
@@ -14,8 +30,8 @@ def calculate_document_stats(
     )
 
     average_words_per_page = (
-        total_words / len(pages)
-        if pages
+        total_words / pages_with_text
+        if pages_with_text
         else 0
     )
 
@@ -26,7 +42,7 @@ def calculate_document_stats(
     )
 
     return {
-        "pages_with_text": len(pages),
+        "pages_with_text": pages_with_text,
         "total_chunks": len(chunks),
         "total_words": total_words,
         "average_words_per_page": round(

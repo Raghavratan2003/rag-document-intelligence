@@ -22,6 +22,21 @@ def document_exists(document_id: str) -> bool:
     return len(results["ids"]) > 0
 
 
+def get_document_id(filename: str) -> str | None:
+
+    results = collection.get(
+        where={
+            "filename": filename
+        },
+        limit=1,
+    )
+
+    if not results["metadatas"]:
+        return None
+
+    return results["metadatas"][0]["document_id"]
+
+
 def add_chunks(
     chunks: list[dict],
     embeddings: list[list[float]],
@@ -62,3 +77,26 @@ def add_chunks(
         embeddings=embeddings,
         metadatas=metadatas,
     )
+
+def get_document_chunks(document_id: str) -> list[dict]:
+    results = collection.get(
+        where={
+            "document_id": document_id
+        }
+    )
+
+    chunks = []
+
+    for document, metadata in zip(
+        results["documents"],
+        results["metadatas"],
+    ):
+        chunks.append(
+            {
+                "text": document,
+                "page_number": metadata["page_number"],
+                "chunk_id": metadata["chunk_id"],
+            }
+        )
+
+    return chunks

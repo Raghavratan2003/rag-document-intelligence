@@ -4,14 +4,20 @@ from app.vector_store import collection
 
 def search_documents(
     query: str,
+    document_id: str,
     n_results: int = 5,
 ) -> list[dict]:
 
-    query_embedding = create_embeddings([query])[0]
+    query_embedding = create_embeddings(
+        [query]
+    )[0]
 
     results = collection.query(
         query_embeddings=[query_embedding],
         n_results=n_results,
+        where={
+            "document_id": document_id
+        },
     )
 
     documents = results["documents"][0]

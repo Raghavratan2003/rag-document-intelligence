@@ -12,6 +12,12 @@ const sources = document.getElementById("sources");
 
 const documentStats = document.getElementById("documentStats");
 
+let currentFilename = null;
+
+
+// ========================================
+// UPLOAD DOCUMENT
+// ========================================
 
 uploadButton.addEventListener("click", async () => {
 
@@ -27,6 +33,7 @@ uploadButton.addEventListener("click", async () => {
     formData.append("file", file);
 
     uploadStatus.textContent = "Processing document...";
+    documentStats.innerHTML = "";
 
     try {
 
@@ -41,39 +48,92 @@ uploadButton.addEventListener("click", async () => {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.detail || "Upload failed.");
+            throw new Error(
+                data.detail || "Upload failed."
+            );
         }
 
-        uploadStatus.textContent =
-            `✓ ${data.filename} processed successfully.`;
+        // Remember the currently selected document
+        currentFilename = data.filename;
 
-        const stats = data.statistics;
 
-        documentStats.innerHTML = `
-            <div class="stats">
+        // --------------------------------
+        // New document
+        // --------------------------------
 
-                <div class="stat">
-                    <strong>${stats.pages_with_text}</strong>
-                    <span>Pages</span>
-                </div>
+if (data.status === "Document indexed successfully") {
 
-                <div class="stat">
-                    <strong>${stats.total_chunks}</strong>
-                    <span>Chunks</span>
-                </div>
+    uploadStatus.textContent =
+        `✓ ${data.filename} processed successfully.`;
 
-                <div class="stat">
-                    <strong>${stats.total_words.toLocaleString()}</strong>
-                    <span>Words</span>
-                </div>
+} else if (data.status === "Document already indexed.") {
 
-                <div class="stat">
-                    <strong>${stats.average_words_per_page}</strong>
-                    <span>Avg. Words/Page</span>
-                </div>
+    uploadStatus.textContent =
+        `✓ ${data.filename} is already indexed.`;
 
+} else {
+
+    uploadStatus.textContent =
+        `✓ ${data.filename} is ready.`;
+}
+
+
+const stats = data.statistics;
+
+if (stats) {
+
+    documentStats.innerHTML = `
+        <div class="stats">
+
+            <div class="stat">
+                <strong>${stats.pages_with_text}</strong>
+                <span>Pages</span>
             </div>
-        `;
+
+            <div class="stat">
+                <strong>${stats.total_chunks}</strong>
+                <span>Chunks</span>
+            </div>
+
+            <div class="stat">
+                <strong>${stats.total_words.toLocaleString()}</strong>
+                <span>Words</span>
+            </div>
+
+            <div class="stat">
+                <strong>${stats.average_words_per_page}</strong>
+                <span>Avg. Words/Page</span>
+            </div>
+
+        </div>
+    `;
+}
+
+        // --------------------------------
+        // Existing document
+        // --------------------------------
+
+        else if (data.status === "Document already indexed.") {
+
+            uploadStatus.textContent =
+                `✓ ${data.filename} is already indexed.`;
+
+            documentStats.innerHTML = `
+                <p>Document is ready for questions.</p>
+            `;
+        }
+
+
+        // --------------------------------
+        // Unknown successful response
+        // --------------------------------
+
+        else {
+
+            uploadStatus.textContent =
+                `✓ ${data.filename} is ready.`;
+        }
+
 
     } catch (error) {
 
@@ -83,18 +143,51 @@ uploadButton.addEventListener("click", async () => {
 });
 
 
+// ========================================
+// ASK QUESTION
+// ========================================
+
 askButton.addEventListener("click", async () => {
 
-    const question = questionInput.value.trim();
+    // Check whether a document has been uploaded
+    if (!currentFilename) {
 
-    if (!question) {
+        answerSection.style.display = "block";
+
+        answer.textContent =
+            "Please upload a document first.";
+
+        sources.innerHTML = "";
+
         return;
     }
 
-    answer.textContent = "Searching document...";
+
+    // Get question
+    const question = questionInput.value.trim();
+
+
+    // Check question
+    if (!question) {
+
+        answerSection.style.display = "block";
+
+        answer.textContent =
+            "Please enter a question.";
+
+        sources.innerHTML = "";
+
+        return;
+    }
+
+
+    answer.textContent =
+        "Searching document...";
+
     sources.innerHTML = "";
 
     answerSection.style.display = "block";
+
 
     try {
 
@@ -108,34 +201,63 @@ askButton.addEventListener("click", async () => {
                 },
 
                 body: JSON.stringify({
-                    query: question
+                    query: question,
+                    filename: currentFilename
                 })
             }
         );
 
+
         const data = await response.json();
 
+
         if (!response.ok) {
-            throw new Error(data.detail || "Question failed.");
+
+            throw new Error(
+                data.detail || "Question failed."
+            );
         }
 
-        answer.textContent = data.answer;
 
-        data.sources.forEach(source => {
+        // Display answer
+        answer.textContent =
+            data.answer;
 
-            const sourceElement = document.createElement("div");
 
-            sourceElement.className = "source";
+        // Display sources
+        if (
+            data.sources &&
+            data.sources.length > 0
+        ) {
 
-            sourceElement.textContent =
-                `📄 ${source.filename} — Page ${source.page_number}`;
+            data.sources.forEach(source => {
 
-            sources.appendChild(sourceElement);
-        });
+                const sourceElement =
+                    document.createElement("div");
+
+                sourceElement.className =
+                    "source";
+
+                sourceElement.textContent =
+                    `📄 ${source.filename} — Page ${source.page_number}`;
+
+                sources.appendChild(
+                    sourceElement
+                );
+            });
+
+        } else {
+
+            sources.textContent =
+                "No sources found.";
+        }
+
 
     } catch (error) {
 
         answer.textContent =
             `Error: ${error.message}`;
+
+        sources.innerHTML = "";
     }
 });

@@ -16,6 +16,8 @@ from app.vector_store import (
     add_chunks,
     collection,
     document_exists,
+    get_document_id,
+    get_document_chunks,
 )
 from app.document_manager import calculate_document_id
 
@@ -43,6 +45,7 @@ def home():
 
 class SearchRequest(BaseModel):
     query: str
+    filename: str
 
 
 @app.post("/upload")
@@ -76,8 +79,19 @@ async def upload_pdf(file: UploadFile = File(...)):
         )
 
     if document_exists(document_id):
+
+        existing_chunks = get_document_chunks(
+            document_id
+        )
+
+        stats = calculate_document_stats(
+            [],
+            existing_chunks,
+        )
+
         return {
             "filename": file.filename,
+            "statistics": stats,
             "status": "Document already indexed.",
         }
 
@@ -158,8 +172,19 @@ def search(request: SearchRequest):
             detail="No documents have been indexed yet.",
         )
 
+    document_id = get_document_id(
+    request.filename
+)
+
+    if document_id is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found.",
+        )
+
     results = search_documents(
-        request.query
+        query=request.query,
+        document_id=document_id,
     )
 
     return {
@@ -183,8 +208,19 @@ def ask(request: SearchRequest):
             detail="Please upload a document first.",
         )
 
+    document_id = get_document_id(
+    request.filename
+)
+
+    if document_id is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found.",
+        )
+
     results = search_documents(
-        request.query
+        query=request.query,
+        document_id=document_id,
     )
 
     raw_response = generate_answer(
