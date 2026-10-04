@@ -285,7 +285,3 @@ The application will open in your browser.
 - Support for additional document formats
 
 ---
-
-## License
-
-This project is intended for educational and portfolio purposes.
